@@ -1,0 +1,111 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" ng-app="chat">
+<head>
+    <title></title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        [ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak {
+          display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <h1>SignalR Chat</h1>
+
+    <div ng-controller="chatController as vm">
+        <form ng-submit="vm.sendMessage()" name="chatForm" novalidate>
+            <input type="text" name="message" ng-model="vm.message" required placeholder="type a message" />
+            <input type="submit" value="Send" ng-disabled="chatForm.message.$error.required || !vm.ready" />
+        </form>
+
+        <ul ng-cloak>
+            <li ng-repeat="msg in vm.messages track by $index">{{ msg }}</li>
+        </ul>
+
+        <p ng-cloak>{{ vm.status }}</p>
+    </div>
+
+    <script src="Scripts/jquery-1.6.4.js"></script>
+    <script src="Scripts/angular.js"></script>
+    <script src="Scripts/jquery.signalR-2.1.0.js"></script>
+    <script src="/signalr/js"></script>
+    <script>
+        angular.module("chat", [])
+            .factory("chatHub", function ($rootScope, $q) {
+                var hub = $.connection.chat;
+                
+                hub.client.newMessage = function (msg) {
+                    $rootScope.$broadcast("newMessage", msg);
+                };
+                hub.client.userJoined = function (userName) {
+                    $rootScope.$broadcast("userJoined", userName);
+                };
+
+                // Handle disconnect and restart the connection shortly after
+                $.connection.hub.disconnected(function () {
+                    var ready = $q.defer();
+
+                    service.ready = ready.promise;
+                    $rootScope.$broadcast("connectionLost");
+
+                    setTimeout(function () {
+                        $.connection.hub.start().then(function () {
+                            ready.resolve();
+                        });
+                    }, 3000);
+                });
+
+                var service = {
+                    server: hub.server,
+                    ready: $.connection.hub.start()
+                };
+
+                return service;
+            })
+            .controller("chatController", function ($scope, chatHub) {
+                var vm = this;
+                var setReady = function (msg) {
+                    chatHub.ready.then(function () {
+                        vm.ready = true;
+                        if (msg) {
+                            vm.messages.push(msg);
+                        }
+                        $scope.$apply();
+                    });
+                };
+
+                vm.ready = false;
+                vm.status = "";
+                vm.message = "";
+                vm.messages = [];
+
+                vm.sendMessage = function () {
+                    if (vm.ready && vm.message) {
+                        chatHub.server.send(vm.message);
+                    }
+                };
+                
+                setReady();
+
+                $scope.$on("newMessage", function (event, msg) {
+                    vm.messages.push(msg);
+                    $scope.$apply();
+                });
+                $scope.$on("userJoined", function (event, userName) {
+                    vm.messages.push(userName + " joined!");
+                    $scope.$apply();
+                });
+                $scope.$on("connectionLost", function () {
+                    if (vm.ready) {
+                        vm.ready = false;
+                        vm.messages.push("Connection lost, will try to reconnect in a bit...");
+                    }
+                    setReady("Connection restored!");
+                    $scope.$apply();
+                });
+            });
+    </script>
+</body>
+</html>
