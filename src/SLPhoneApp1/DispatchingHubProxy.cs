@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Threading;
 using Microsoft.AspNet.SignalR.Client.Hubs;
 using Newtonsoft.Json;
@@ -15,7 +16,7 @@ namespace Microsoft.AspNet.SignalR.Client
         public DispatchingHubProxy(IHubProxy hubProxy, Dispatcher dispatcher)
         {
             _hubProxy = hubProxy;
-            _dispatcher = dispatcher;
+            _dispatcher = dispatcher ?? Deployment.Current.Dispatcher;
         }
 
         public JToken this[string name]
@@ -56,17 +57,29 @@ namespace Microsoft.AspNet.SignalR.Client
 
         public void On<T1>(string eventName, Action<T1> action)
         {
-            _hubProxy.On<T1>(eventName, a1 => _dispatcher.BeginInvoke(() => action(a1)));
+            _hubProxy.On<T1>(eventName, a1 => SmartDispatch(() => action(a1)));
         }
 
         public void On<T1, T2>(string eventName, Action<T1, T2> action)
         {
-            _hubProxy.On<T1, T2>(eventName, (a1, a2) => _dispatcher.BeginInvoke(() => action(a1, a2)));
+            _hubProxy.On<T1, T2>(eventName, (a1, a2) => SmartDispatch(() => action(a1, a2)));
         }
 
         public void On<T1, T2, T3>(string eventName, Action<T1, T2, T3> action)
         {
-            _hubProxy.On<T1, T2, T3>(eventName, (a1, a2, a3) => _dispatcher.BeginInvoke(() => action(a1, a2, a3)));
+            _hubProxy.On<T1, T2, T3>(eventName, (a1, a2, a3) => SmartDispatch(() => action(a1, a2, a3)));
+        }
+
+        private void SmartDispatch(Action action)
+        {
+            if (_dispatcher.CheckAccess())
+            {
+                action();
+            }
+            else
+            {
+                _dispatcher.BeginInvoke(() => action());
+            }
         }
     }
 }

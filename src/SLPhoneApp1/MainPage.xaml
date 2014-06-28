@@ -15,50 +15,44 @@
 
     <!--LayoutRoot is the root grid where all page content is placed-->
     <Grid x:Name="LayoutRoot" Background="Transparent">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+        <!--Pivot Control-->
+        <phone:Pivot Title="SIGNALR CHAT">
+            <phone:PivotItem Header="chat">
+                <Grid>
+                    <!--ContentPanel - place additional content here-->
+                    <Grid x:Name="ContentPanel" Grid.Row="1" Margin="0,0,0,0">
+                        <TextBox Margin="0,0,81,0" TextWrapping="NoWrap" Text="{Binding Message, Mode=TwoWay}" VerticalAlignment="Top" />
+                        <Button Content="Send" Margin="0,0,0,0" VerticalAlignment="Top" Command="{Binding SendMessageCommand}" HorizontalAlignment="Right" Width="Auto" />
 
-        <!-- LOCALIZATION NOTE:
-            To localize the displayed strings copy their values to appropriately named
-            keys in the app's neutral language resource file (AppResources.resx) then
-            replace the hard-coded text value between the attributes' quotation marks
-            with the binding clause whose path points to that string name.
+                        <ListBox Margin="10,77,10,32" ItemsSource="{Binding Messages}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding ReceivedAt, StringFormat=\{0:H:mm:ss\}}" Margin="0,0,10,0" />
+                                        <TextBlock Text="{Binding UserName, StringFormat='\{0\}: '}" FontWeight="Bold" />
+                                        <TextBlock Text="{Binding Text}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Grid>
+                </Grid>
+            </phone:PivotItem>
 
-            For example:
+            <phone:PivotItem Header="log">
+                <Grid>
+                    <ListBox Margin="0,0,0,32" ItemsSource="{Binding LogMessages}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" FontSize="10" TextWrapping="Wrap" />
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </phone:PivotItem>
+        </phone:Pivot>
 
-                Text="{Binding Path=LocalizedResources.ApplicationTitle, Source={StaticResource LocalizedStrings}}"
-
-            This binding points to the template's string resource named "ApplicationTitle".
-
-            Adding supported languages in the Project Properties tab will create a
-            new resx file per language that can carry the translated values of your
-            UI strings. The binding in these examples will cause the value of the
-            attributes to be drawn from the .resx file that matches the
-            CurrentUICulture of the app at run time.
-         -->
-
-        <!--TitlePanel contains the name of the application and page title-->
-        <StackPanel x:Name="TitlePanel" Grid.Row="0" Margin="12,17,0,28">
-            <TextBlock Text="SIGNALR CHAT" Style="{StaticResource PhoneTextNormalStyle}" Margin="12,0"/>
-            <TextBlock Text="chat" Margin="9,-7,0,0" Style="{StaticResource PhoneTextTitle1Style}"/>
-        </StackPanel>
-
-        <!--ContentPanel - place additional content here-->
-        <Grid x:Name="ContentPanel" Grid.Row="1" Margin="12,0,12,0">
-            <TextBox Margin="10,10,104,0" TextWrapping="Wrap" Text="{Binding Message, Mode=TwoWay}" VerticalAlignment="Top"/>
-            <Button Content="Send" HorizontalAlignment="Left" Margin="332,10,0,0" VerticalAlignment="Top" Width="114" Command="{Binding SendMessageCommand}" />
-            
-            <ListBox Margin="10,87,10,32" ItemsSource="{Binding Messages}">
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock Text="{Binding Text}" />
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
-            <TextBlock HorizontalAlignment="Left" Margin="10,575,0,0" TextWrapping="Wrap" Text="{Binding Status}" VerticalAlignment="Top" FontSize="14"/>
-        </Grid>
+        <TextBlock HorizontalAlignment="Left" Margin="10,0,0,10" TextWrapping="NoWrap" Text="{Binding Status, FallbackValue=Status}" FontSize="14" Height="19" VerticalAlignment="Bottom"  />
 
         <!--Uncomment to see an alignment grid to help ensure your controls are
             aligned on common boundaries.  The image has a top margin of -32px to

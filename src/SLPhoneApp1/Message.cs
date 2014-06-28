@@ -2,13 +2,16 @@
 
 namespace SLPhoneApp1
 {
-    public class ReceivedMessage
+    public class Message
     {
-        public ReceivedMessage(string text)
+        public Message(string text, string userName = null)
         {
+            UserName = userName;
             Text = text;
             ReceivedAt = DateTime.Now;
         }
+
+        public string UserName { get; set; }
 
         public string Text { get; private set; }
 

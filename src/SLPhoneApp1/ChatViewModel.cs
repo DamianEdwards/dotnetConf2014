@@ -13,7 +13,8 @@ namespace SLPhoneApp1
     internal class ChatViewModel : INotifyPropertyChanged
     {
         private readonly string _hubUrl = "http://localhost:61369/";
-        private HubConnection _hubConnection;
+        private readonly TimeSpan _reconnectDelay = TimeSpan.FromSeconds(3);
+        private DispatchingHubConnection _hubConnection;
         private DispatchingHubProxy _hubProxy;
         private string _message;
         private bool _canSend;
@@ -24,7 +25,8 @@ namespace SLPhoneApp1
         {
             Dispatcher = dispatcher;
             SendMessageCommand = new DelegateCommand(async () => await SendMessage(), () => CanSend);
-            Messages = new ObservableCollection<ReceivedMessage>();
+            Messages = new ObservableCollection<Message>();
+            LogMessages = new ObservableCollection<string>();
             Status = "Waiting to connect...";
 
             var ignore = Connect();
@@ -74,7 +76,9 @@ namespace SLPhoneApp1
             }
         }
 
-        public ObservableCollection<ReceivedMessage> Messages { get; private set; }
+        public ObservableCollection<Message> Messages { get; private set; }
+
+        public ObservableCollection<string> LogMessages { get; private set; }
 
         public ICommand SendMessageCommand { get; private set; }
 
@@ -95,41 +99,44 @@ namespace SLPhoneApp1
                     return;
                 }
 
-                _hubConnection = new HubConnection(_hubUrl);
+                _hubConnection = new DispatchingHubConnection(_hubUrl, Dispatcher);
+                _hubConnection.TraceLevel = TraceLevels.All;
+                _hubConnection.TraceWriter = new CollectionTraceWriter(LogMessages, Dispatcher);
                 _hubConnection.Reconnecting += () =>
                 {
                     CanSend = false;
                     Status = "Connection reconnecting...";
                 };
-                _hubConnection.StateChanged += e =>
+                _hubConnection.Reconnected += () =>
                 {
-                    if (e.OldState == ConnectionState.Reconnecting && e.NewState == ConnectionState.Connected)
-                    {
-                        Status = string.Format("Connected to {0} via {1}", _hubUrl, _hubConnection.Transport.Name);
-                        CanSend = true;
-                    }
+                    Status = string.Format("Connected to {0} via {1}", _hubUrl, _hubConnection.Transport.Name);
+                    CanSend = true;
                 };
                 _hubConnection.Closed += async () =>
                 {
                     CanSend = false;
                     Status = "Connection lost, reconnecting in a bit...";
-                    await Task.Delay(3000);
+                    await Task.Delay(_reconnectDelay);
                     var ignore = Connect();
                 };
+                _hubConnection.Error += ex =>
+                {
+                    Status = "Connection error, see log for details";
+                };
 
-                _hubProxy = _hubConnection.CreateHubProxy("chat").UsingDispatcher(Dispatcher);
-                _hubProxy.On<string>("userJoined", userName =>
-                    Messages.Add(new ReceivedMessage(string.Format("{0} joined", userName))));
-                _hubProxy.On<string>("newMessage", message =>
-                    Messages.Add(new ReceivedMessage(message)));
+                _hubProxy = _hubConnection.CreateHubProxy("chat");
+                _hubProxy.On<string>("userJoined", userName => Messages.Add(new Message(string.Format("{0} joined", userName))));
+                _hubProxy.On<string, string>("newMessage", (userName, message) => Messages.Add(new Message(message, userName)));
             }
 
             Status = "Connecting...";
+
             while (true)
             {
-
                 try
                 {
+                    // HTTP streaming transports don't work well on the Windows Phone stack so we force long polling.
+                    // We're adding support for WebSockets to Windows Store/Phone 8.1 apps in SignalR 2.2.0
                     await _hubConnection.Start(new LongPollingTransport());
                     Status = string.Format("Connected to {0} via {1}", _hubUrl, _hubConnection.Transport.Name);
                     CanSend = true;
@@ -139,30 +146,27 @@ namespace SLPhoneApp1
                 {
                     Status = string.Format("Connecting to {0} failed, trying again in a bit", _hubUrl);
                 }
-                await Task.Delay(3000);
+                await Task.Delay(_reconnectDelay);
             }
         }
 
         private async Task SendMessage()
         {
+            // Capture the values locally before use
             var msg = Message;
-            Message = string.Empty;
-            //Status = "Sending message: " + msg;
+            var proxy = _hubProxy;
 
-            if (!string.IsNullOrWhiteSpace(msg))
+            Message = string.Empty;
+
+            if (proxy != null && !string.IsNullOrWhiteSpace(msg))
             {
                 try
                 {
-                    await _hubProxy.Invoke("Send", msg);
-                    //Status = "Message sent";
+                    await proxy.Invoke("Send", msg);
                 }
                 catch (Exception ex)
                 {
-                    //Status = "Error sending message";
-                   
-                    Dispatcher.BeginInvoke(() =>
-                        Messages.Add(new ReceivedMessage(string.Format("Error sending message: {0}", ex.Message)))
-                    );
+                    Messages.Add(new Message(string.Format("Error sending message: {0}", ex.Message)));
                 }
             }
         }
@@ -172,7 +176,7 @@ namespace SLPhoneApp1
             private readonly Action _execute;
             private readonly Func<bool> _canExecute;
 
-            public DelegateCommand(Action execute, Func<bool> canExecute)
+            public DelegateCommand(Action execute, Func<bool> canExecute = null)
             {
                 _execute = execute;
                 _canExecute = canExecute;

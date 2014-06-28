@@ -19,7 +19,7 @@ namespace Server
 
         public void Send(string message)
         {
-            Clients.All.newMessage(message);
+            Clients.All.newMessage(Context.User.Identity.IsAuthenticated ? Context.User.Identity.Name : "anonymous", message);
         }
     }
 }
