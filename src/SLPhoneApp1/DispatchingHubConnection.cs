@@ -5,6 +5,9 @@ using Microsoft.AspNet.SignalR.Client;
 
 namespace SLPhoneApp1
 {
+    /// <summary>
+    /// A HubConnection that invokes callbacks via a <see cref="System.Windows.Threading.Dispatcher"/>.
+    /// </summary>
     public class DispatchingHubConnection : HubConnection
     {
         private readonly Dispatcher _dispatcher;
@@ -37,7 +40,7 @@ namespace SLPhoneApp1
         {
             if (_stateChanged != null)
             {
-                SmartDispatch(() => _stateChanged(stateChange));
+                _stateChanged.Dispatch(stateChange, _dispatcher);
             }
         }
 
@@ -51,7 +54,7 @@ namespace SLPhoneApp1
         {
             if (_connectionSlow != null)
             {
-                SmartDispatch(() => _connectionSlow());
+                _connectionSlow.Dispatch(_dispatcher);
             }
         }
 
@@ -65,7 +68,7 @@ namespace SLPhoneApp1
         {
             if (_reconnecting != null)
             {
-                SmartDispatch(_reconnecting);
+                _reconnecting.Dispatch(_dispatcher);
             }
         }
 
@@ -79,7 +82,7 @@ namespace SLPhoneApp1
         {
             if (_reconnected != null)
             {
-                SmartDispatch(_reconnected);
+                _reconnected.Dispatch(_dispatcher);
             }
         }
 
@@ -93,7 +96,7 @@ namespace SLPhoneApp1
         {
             if (_closed != null)
             {
-                SmartDispatch(_closed);
+                _closed.Dispatch(_dispatcher);
             }
         }
 
@@ -103,29 +106,17 @@ namespace SLPhoneApp1
             remove { Action.Remove(_error, value); }
         }
 
-        void HubConnection_Error(Exception ex)
+        private void HubConnection_Error(Exception ex)
         {
             if (_error != null)
             {
-                SmartDispatch(() => _error(ex));
+                _error.Dispatch(ex, _dispatcher);
             }
         }
 
         public new DispatchingHubProxy CreateHubProxy(string name)
         {
             return new DispatchingHubProxy(base.CreateHubProxy(name), _dispatcher);
-        }
-
-        private void SmartDispatch(Action action)
-        {
-            if (_dispatcher.CheckAccess())
-            {
-                action();
-            }
-            else
-            {
-                _dispatcher.BeginInvoke(() => action());
-            }
         }
     }
 }

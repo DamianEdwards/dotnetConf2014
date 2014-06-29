@@ -91,6 +91,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="ActionExtensions.cs" />
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
@@ -98,7 +99,6 @@
     <Compile Include="CollectionTraceWriter.cs" />
     <Compile Include="DispatchingHubConnection.cs" />
     <Compile Include="DispatchingHubProxy.cs" />
-    <Compile Include="HubProxyExtensions.cs" />
     <Compile Include="LocalizedStrings.cs" />
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>

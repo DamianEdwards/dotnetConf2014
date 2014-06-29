@@ -57,29 +57,17 @@ namespace Microsoft.AspNet.SignalR.Client
 
         public void On<T1>(string eventName, Action<T1> action)
         {
-            _hubProxy.On<T1>(eventName, a1 => SmartDispatch(() => action(a1)));
+            _hubProxy.On<T1>(eventName, a => action.Dispatch(a, _dispatcher));
         }
 
         public void On<T1, T2>(string eventName, Action<T1, T2> action)
         {
-            _hubProxy.On<T1, T2>(eventName, (a1, a2) => SmartDispatch(() => action(a1, a2)));
+            _hubProxy.On<T1, T2>(eventName, (a1, a2) => action.Dispatch(a1, a2, _dispatcher));
         }
 
         public void On<T1, T2, T3>(string eventName, Action<T1, T2, T3> action)
         {
-            _hubProxy.On<T1, T2, T3>(eventName, (a1, a2, a3) => SmartDispatch(() => action(a1, a2, a3)));
-        }
-
-        private void SmartDispatch(Action action)
-        {
-            if (_dispatcher.CheckAccess())
-            {
-                action();
-            }
-            else
-            {
-                _dispatcher.BeginInvoke(() => action());
-            }
+            _hubProxy.On<T1, T2, T3>(eventName, (a1, a2, a3) => action.Dispatch(a1, a2, a3, _dispatcher));
         }
     }
 }

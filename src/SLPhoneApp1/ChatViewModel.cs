@@ -19,7 +19,7 @@ namespace SLPhoneApp1
         private string _message;
         private bool _canSend;
         private string _status;
-        private object _locker = new object();
+        private object _connectionStateLocker = new object();
         
         public ChatViewModel(Dispatcher dispatcher)
         {
@@ -92,32 +92,58 @@ namespace SLPhoneApp1
 
         private async Task Connect()
         {
-            lock (_locker)
+            lock (_connectionStateLocker)
             {
-                if (_hubConnection != null && _hubConnection.State != ConnectionState.Disconnected)
+                if (_hubConnection != null)
                 {
-                    return;
+                    if (_hubConnection.State != ConnectionState.Disconnected)
+                    {
+                        return;
+                    }
+
+                    _hubConnection.Dispose();
                 }
 
                 _hubConnection = new DispatchingHubConnection(_hubUrl, Dispatcher);
+                
+                // Enable tracing
                 _hubConnection.TraceLevel = TraceLevels.All;
                 _hubConnection.TraceWriter = new CollectionTraceWriter(LogMessages, Dispatcher);
+
+                // Handle the connection lifetime events
                 _hubConnection.Reconnecting += () =>
                 {
-                    CanSend = false;
-                    Status = "Connection reconnecting...";
+                    lock (_connectionStateLocker)
+                    {
+                        if (_hubConnection.State == ConnectionState.Reconnecting)
+                        {
+                            CanSend = false;
+                            Status = "Connection reconnecting...";
+                        }
+                    }
                 };
                 _hubConnection.Reconnected += () =>
                 {
-                    Status = string.Format("Connected to {0} via {1}", _hubUrl, _hubConnection.Transport.Name);
-                    CanSend = true;
+                    lock (_connectionStateLocker)
+                    {
+                        if (_hubConnection.State == ConnectionState.Connected)
+                        {
+                            Status = string.Format("Connected to {0} via {1}", _hubUrl, _hubConnection.Transport.Name);
+                            CanSend = true;
+                        }
+                    }
                 };
-                _hubConnection.Closed += async () =>
+                _hubConnection.Closed += () =>
                 {
-                    CanSend = false;
-                    Status = "Connection lost, reconnecting in a bit...";
-                    await Task.Delay(_reconnectDelay);
-                    var ignore = Connect();
+                    lock (_connectionStateLocker)
+                    {
+                        if (_hubConnection.State == ConnectionState.Disconnected)
+                        {
+                            CanSend = false;
+                            Status = "Connection lost, reconnecting in a bit...";
+                            var ignore = Task.Run(() => Task.Delay(_reconnectDelay).ContinueWith(_ => Connect()));
+                        }
+                    }
                 };
                 _hubConnection.Error += ex =>
                 {
@@ -125,8 +151,15 @@ namespace SLPhoneApp1
                 };
 
                 _hubProxy = _hubConnection.CreateHubProxy("chat");
-                _hubProxy.On<string>("userJoined", userName => Messages.Add(new Message(string.Format("{0} joined", userName))));
-                _hubProxy.On<string, string>("newMessage", (userName, message) => Messages.Add(new Message(message, userName)));
+
+                _hubProxy.On<string>("userJoined", userName =>
+                {
+                    Messages.Add(new Message(string.Format("{0} joined", userName)));
+                });
+                _hubProxy.On<string, string>("newMessage", (userName, message) =>
+                {
+                    Messages.Add(new Message(message, userName));
+                });
             }
 
             Status = "Connecting...";
@@ -138,9 +171,15 @@ namespace SLPhoneApp1
                     // HTTP streaming transports don't work well on the Windows Phone stack so we force long polling.
                     // We're adding support for WebSockets to Windows Store/Phone 8.1 apps in SignalR 2.2.0
                     await _hubConnection.Start(new LongPollingTransport());
-                    Status = string.Format("Connected to {0} via {1}", _hubUrl, _hubConnection.Transport.Name);
-                    CanSend = true;
-                    break;
+                    lock (_connectionStateLocker)
+                    {
+                        if (_hubConnection.State == ConnectionState.Connected)
+                        {
+                            Status = string.Format("Connected to {0} via {1}", _hubUrl, _hubConnection.Transport.Name);
+                            CanSend = true;
+                            break;
+                        }
+                    }
                 }
                 catch (Exception)
                 {
@@ -152,23 +191,26 @@ namespace SLPhoneApp1
 
         private async Task SendMessage()
         {
+            CanSend = false;
+
             // Capture the values locally before use
             var msg = Message;
             var proxy = _hubProxy;
-
-            Message = string.Empty;
 
             if (proxy != null && !string.IsNullOrWhiteSpace(msg))
             {
                 try
                 {
                     await proxy.Invoke("Send", msg);
+                    Message = string.Empty;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    Messages.Add(new Message(string.Format("Error sending message: {0}", ex.Message)));
+                    Messages.Add(new Message("Error sending message, see log for details"));
                 }
             }
+
+            CanSend = true;
         }
 
         private class DelegateCommand : ICommand

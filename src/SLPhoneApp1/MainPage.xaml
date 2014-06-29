@@ -28,7 +28,7 @@
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="{Binding ReceivedAt, StringFormat=\{0:H:mm:ss\}}" Margin="0,0,10,0" />
+                                        <TextBlock Text="{Binding ReceivedAt, StringFormat=\{0:h:mm:ss tt\}}" Margin="0,0,10,0" />
                                         <TextBlock Text="{Binding UserName, StringFormat='\{0\}: '}" FontWeight="Bold" />
                                         <TextBlock Text="{Binding Text}" />
                                     </StackPanel>
