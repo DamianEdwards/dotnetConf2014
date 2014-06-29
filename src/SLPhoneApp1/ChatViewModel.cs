@@ -25,6 +25,7 @@ namespace SLPhoneApp1
         {
             Dispatcher = dispatcher;
             SendMessageCommand = new DelegateCommand(async () => await SendMessage(), () => CanSend);
+            ClearLogCommand = new DelegateCommand(() => LogMessages.Clear());
             Messages = new ObservableCollection<Message>();
             LogMessages = new ObservableCollection<string>();
             Status = "Waiting to connect...";
@@ -81,6 +82,8 @@ namespace SLPhoneApp1
         public ObservableCollection<string> LogMessages { get; private set; }
 
         public ICommand SendMessageCommand { get; private set; }
+
+        public ICommand ClearLogCommand { get; private set; }
 
         protected void OnPropertyChanged([CallerMemberName]string propertyName = "")
         {
