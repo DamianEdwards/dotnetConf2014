@@ -95,77 +95,69 @@ namespace SLPhoneApp1
 
         private async Task Connect()
         {
-            lock (_connectionStateLocker)
+            if (_hubConnection != null)
             {
-                if (_hubConnection != null)
+                if (_hubConnection.State != ConnectionState.Disconnected)
                 {
-                    if (_hubConnection.State != ConnectionState.Disconnected)
-                    {
-                        return;
-                    }
-
-                    _hubConnection.Dispose();
+                    return;
                 }
 
-                _hubConnection = new DispatchingHubConnection(_hubUrl, Dispatcher);
-                
-                // Enable tracing
-                _hubConnection.TraceLevel = TraceLevels.All;
-                _hubConnection.TraceWriter = new CollectionTraceWriter(LogMessages, Dispatcher);
-
-                // Handle the connection lifetime events
-                _hubConnection.Reconnecting += () =>
-                {
-                    lock (_connectionStateLocker)
-                    {
-                        if (_hubConnection.State == ConnectionState.Reconnecting)
-                        {
-                            CanSend = false;
-                            Status = "Connection reconnecting...";
-                        }
-                    }
-                };
-                _hubConnection.Reconnected += () =>
-                {
-                    lock (_connectionStateLocker)
-                    {
-                        if (_hubConnection.State == ConnectionState.Connected)
-                        {
-                            Status = string.Format("Connected to {0} via {1}", _hubUrl, _hubConnection.Transport.Name);
-                            CanSend = true;
-                        }
-                    }
-                };
-                _hubConnection.Closed += () =>
-                {
-                    lock (_connectionStateLocker)
-                    {
-                        if (_hubConnection.State == ConnectionState.Disconnected)
-                        {
-                            CanSend = false;
-                            Status = "Connection lost, reconnecting in a bit...";
-                            var ignore = Task.Run(() => Task.Delay(_reconnectDelay).ContinueWith(_ => Connect()));
-                        }
-                    }
-                };
-                _hubConnection.Error += ex =>
-                {
-                    Status = "Connection error, see log for details";
-                };
-
-                _hubProxy = _hubConnection.CreateHubProxy("chat");
-
-                _hubProxy.On<string>("userJoined", userName =>
-                {
-                    Messages.Add(new Message(string.Format("{0} joined", userName)));
-                });
-                _hubProxy.On<string, string>("newMessage", (userName, message) =>
-                {
-                    Messages.Add(new Message(message, userName));
-                });
+                // Dispose/Stop the old connection on a bg thread, we don't care about it anymore
+                Task.Run(() => _hubConnection.Dispose()).Forget();
             }
 
             Status = "Connecting...";
+
+            // The DispatchingHubConnection will execute all callbacks via the Dispatcher (UI thread)
+            // so the need for locking and posting is drastically reduced.
+            _hubConnection = new DispatchingHubConnection(_hubUrl, Dispatcher);
+
+            // Enable tracing
+            _hubConnection.TraceLevel = TraceLevels.All;
+            _hubConnection.TraceWriter = new CollectionTraceWriter(LogMessages, Dispatcher);
+
+            // Handle the connection lifetime events
+            _hubConnection.Reconnecting += () =>
+            {
+                if (_hubConnection.State == ConnectionState.Reconnecting)
+                {
+                    CanSend = false;
+                    Status = "Connection reconnecting...";
+                }
+            };
+            _hubConnection.Reconnected += () =>
+            {
+                if (_hubConnection.State == ConnectionState.Connected)
+                {
+                    Status = string.Format("Connected to {0} via {1}", _hubUrl, _hubConnection.Transport.Name);
+                    CanSend = true;
+                }
+            };
+            _hubConnection.Closed += async () =>
+            {
+                if (_hubConnection.State == ConnectionState.Disconnected)
+                {
+                    CanSend = false;
+                    Status = "Connection lost, reconnecting in a bit...";
+                    await Task.Delay(_reconnectDelay);
+                    await Connect();
+                }
+            };
+            _hubConnection.Error += ex =>
+            {
+                LogMessages.Add(ex.ToString());
+            };
+
+            _hubProxy = _hubConnection.CreateHubProxy("chat");
+
+            _hubProxy.On<string>("userJoined", userName =>
+            {
+                Messages.Add(new Message(string.Format("{0} joined", userName)));
+            });
+            _hubProxy.On<string, string>("newMessage", (userName, message) =>
+            {
+                Messages.Add(new Message(message, userName));
+            });
 
             while (true)
             {
@@ -174,14 +166,11 @@ namespace SLPhoneApp1
                     // HTTP streaming transports don't work well on the Windows Phone stack so we force long polling.
                     // We're adding support for WebSockets to Windows Store/Phone 8.1 apps in SignalR 2.2.0
                     await _hubConnection.Start(new LongPollingTransport());
-                    lock (_connectionStateLocker)
+                    if (_hubConnection.State == ConnectionState.Connected)
                     {
-                        if (_hubConnection.State == ConnectionState.Connected)
-                        {
-                            Status = string.Format("Connected to {0} via {1}", _hubUrl, _hubConnection.Transport.Name);
-                            CanSend = true;
-                            break;
-                        }
+                        Status = string.Format("Connected to {0} via {1}", _hubUrl, _hubConnection.Transport.Name);
+                        CanSend = true;
+                        break;
                     }
                 }
                 catch (Exception)
@@ -207,8 +196,9 @@ namespace SLPhoneApp1
                     await proxy.Invoke("Send", msg);
                     Message = string.Empty;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    LogMessages.Add(ex.ToString());
                     Messages.Add(new Message("Error sending message, see log for details"));
                 }
             }
