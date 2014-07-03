@@ -103,7 +103,8 @@ namespace SLPhoneApp1
                 }
 
                 // Dispose/Stop the old connection on a bg thread, we don't care about it anymore
-                Task.Run(() => _hubConnection.Dispose()).Forget();
+                var oldConnection = _hubConnection;
+                Task.Run(() => oldConnection.Dispose()).Forget();
             }
 
             Status = "Connecting...";
