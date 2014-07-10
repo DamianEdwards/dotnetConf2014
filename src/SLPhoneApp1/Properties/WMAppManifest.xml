@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Deployment xmlns="http://schemas.microsoft.com/windowsphone/2014/deployment" AppPlatformVersion="8.1">
   <DefaultLanguage xmlns="" code="en-US" />
-  <App xmlns="" ProductID="{e451897a-a138-4a6d-9e0d-bb433e5c062c}" Title="SignalR Chat" RuntimeType="Silverlight" Version="1.0.0.0" Genre="apps.normal" Author="SLPhoneApp1 author" Description="Sample description" SDOptOut="false" BackUpOptOut="false" Publisher="SLPhoneApp1" PublisherID="{aa16a95a-0eff-46ad-9c12-b7f0f5099bc2}">
+  <App xmlns="" ProductID="{e451897a-a138-4a6d-9e0d-bb433e5c062c}" Title="SignalR Chat (SL)" RuntimeType="Silverlight" Version="1.0.0.0" Genre="apps.normal" Author="SLPhoneApp1 author" Description="Sample description" SDOptOut="false" BackUpOptOut="false" Publisher="SLPhoneApp1" PublisherID="{aa16a95a-0eff-46ad-9c12-b7f0f5099bc2}">
     <IconPath IsRelative="true" IsResource="false">Assets\ApplicationIcon.png</IconPath>
     <Capabilities>
       <Capability Name="ID_CAP_NETWORKING" />

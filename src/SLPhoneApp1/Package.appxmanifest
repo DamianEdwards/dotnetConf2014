@@ -1,59 +1,35 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Package xmlns="http://schemas.microsoft.com/appx/2010/manifest"
-         xmlns:m2="http://schemas.microsoft.com/appx/2013/manifest"
-         xmlns:m3="http://schemas.microsoft.com/appx/2014/manifest"
-         xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest">
-
-  <Identity Name="6a8f06ec-2408-49c5-8096-1740061b6261"
-            Publisher="CN=dedward"
-            Version="1.0.0.0" />
-
-  <mp:PhoneIdentity PhoneProductId="e451897a-a138-4a6d-9e0d-bb433e5c062c"
-                    PhonePublisherId="aa16a95a-0eff-46ad-9c12-b7f0f5099bc2"/>
-
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Package xmlns="http://schemas.microsoft.com/appx/2010/manifest" xmlns:m2="http://schemas.microsoft.com/appx/2013/manifest" xmlns:m3="http://schemas.microsoft.com/appx/2014/manifest" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest">
+  <Identity Name="6a8f06ec-2408-49c5-8096-1740061b6261" Publisher="CN=dedward" Version="1.0.0.0" />
+  <mp:PhoneIdentity PhoneProductId="e451897a-a138-4a6d-9e0d-bb433e5c062c" PhonePublisherId="aa16a95a-0eff-46ad-9c12-b7f0f5099bc2" />
   <Properties>
     <DisplayName>SLPhoneApp1</DisplayName>
     <PublisherDisplayName>dedward</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
-
   <Prerequisites>
     <OSMinVersion>6.3.1</OSMinVersion>
     <OSMaxVersionTested>6.3.1</OSMaxVersionTested>
   </Prerequisites>
-
   <Resources>
-    <Resource Language="x-generate"/>
+    <Resource Language="x-generate" />
   </Resources>
-
   <Applications>
-    <Application Id="App"
-                 Executable="AGHost.exe"
-                 EntryPoint="MainPage.xaml">
-      <m3:VisualElements
-          DisplayName="SLPhoneApp1"
-          Square150x150Logo="Assets\SquareTile150x150.png"
-          Square44x44Logo="Assets\Logo.png"
-          Description="SLPhoneApp1"
-          ForegroundText="light"
-          BackgroundColor="#464646">
-        <m3:DefaultTile Square71x71Logo="Assets\SquareTile71x71.png"/>
+    <Application Id="App" Executable="AGHost.exe" EntryPoint="MainPage.xaml">
+      <m3:VisualElements DisplayName="SignalR Chat (SL)" Square150x150Logo="Assets\SquareTile150x150.png" Square44x44Logo="Assets\Logo.png" Description="SLPhoneApp1" ForegroundText="light" BackgroundColor="#464646">
+        <m3:DefaultTile Square71x71Logo="Assets\SquareTile71x71.png">
+        </m3:DefaultTile>
         <m3:SplashScreen Image="Assets\SplashScreen.png" />
       </m3:VisualElements>
-
       <Extensions>
         <Extension Category="windows.backgroundTasks" EntryPoint="AgHost.BackgroundTask">
           <BackgroundTasks>
-          <Task Type="systemEvent" />
+            <Task Type="systemEvent" />
           </BackgroundTasks>
         </Extension>
       </Extensions>
-
     </Application>
   </Applications>
-  <Capabilities>
-  </Capabilities>
-
   <Extensions>
     <Extension Category="windows.activatableClass.inProcessServer">
       <InProcessServer>
@@ -62,5 +38,4 @@
       </InProcessServer>
     </Extension>
   </Extensions>
-
 </Package>
