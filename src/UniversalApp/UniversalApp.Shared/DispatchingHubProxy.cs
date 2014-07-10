@@ -1,5 +1,10 @@
 ﻿using System;
 using System.Threading.Tasks;
+#if SILVERLIGHT
+using System.Windows.Threading;
+#else
+using Dispatcher = Windows.UI.Core.CoreDispatcher;
+#endif
 using Microsoft.AspNet.SignalR.Client.Hubs;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -10,13 +15,22 @@ namespace Microsoft.AspNet.SignalR.Client
     public class DispatchingHubProxy : IHubProxy
     {
         private readonly IHubProxy _hubProxy;
-        private readonly CoreDispatcher _dispatcher;
+        private readonly Dispatcher _dispatcher;
 
-        public DispatchingHubProxy(IHubProxy hubProxy, CoreDispatcher dispatcher)
+        public DispatchingHubProxy(IHubProxy hubProxy, Dispatcher dispatcher)
         {
+            if (hubProxy == null)
+            {
+                throw new ArgumentNullException("hubProxy");
+            }
+
+            if (dispatcher == null)
+            {
+                throw new ArgumentNullException("dispatcher");
+            }
+
             _hubProxy = hubProxy;
             _dispatcher = dispatcher;
-            //_dispatcher = dispatcher ?? Deployment.Current.Dispatcher;
         }
 
         public JToken this[string name]
@@ -57,17 +71,17 @@ namespace Microsoft.AspNet.SignalR.Client
 
         public void On<T1>(string eventName, Action<T1> action)
         {
-            _hubProxy.On<T1>(eventName, a => action.Dispatch(a, _dispatcher).Forget());
+            _hubProxy.On<T1>(eventName, a => action.Dispatch(a, _dispatcher));
         }
 
         public void On<T1, T2>(string eventName, Action<T1, T2> action)
         {
-            _hubProxy.On<T1, T2>(eventName, (a1, a2) => action.Dispatch(a1, a2, _dispatcher).Forget());
+            _hubProxy.On<T1, T2>(eventName, (a1, a2) => action.Dispatch(a1, a2, _dispatcher));
         }
 
         public void On<T1, T2, T3>(string eventName, Action<T1, T2, T3> action)
         {
-            _hubProxy.On<T1, T2, T3>(eventName, (a1, a2, a3) => action.Dispatch(a1, a2, a3, _dispatcher).Forget());
+            _hubProxy.On<T1, T2, T3>(eventName, (a1, a2, a3) => action.Dispatch(a1, a2, a3, _dispatcher));
         }
     }
 }

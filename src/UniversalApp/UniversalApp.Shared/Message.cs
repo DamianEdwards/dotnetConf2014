@@ -1,11 +1,15 @@
 ﻿using System;
+#if !SILVERLIGHT
 using Windows.Globalization.DateTimeFormatting;
+#endif
 
 namespace SignalRChat
 {
     public class Message
     {
+#if !SILVERLIGHT
         private readonly DateTimeFormatter _dateTimeFormatter = new DateTimeFormatter("hour minute second");
+#endif
 
         public Message(string text, string userName = null)
         {
@@ -20,9 +24,14 @@ namespace SignalRChat
 
         public DateTime ReceivedAt { get; private set; }
 
+#if !SILVERLIGHT
         public string ReceivedAtFormatted
         {
-            get { return _dateTimeFormatter.Format(ReceivedAt); }
+            get
+            {
+                return _dateTimeFormatter.Format(ReceivedAt);
+            }
         }
+#endif
     }
 }

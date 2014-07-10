@@ -4,6 +4,11 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
+#if SILVERLIGHT
+using System.Windows.Threading;
+#else
+using Dispatcher = Windows.UI.Core.CoreDispatcher;
+#endif
 using Microsoft.AspNet.SignalR.Client;
 using Microsoft.AspNet.SignalR.Client.Transports;
 using Windows.UI.Core;
@@ -21,7 +26,7 @@ namespace SignalRChat
         private string _status;
         private object _connectionStateLocker = new object();
         
-        public ChatViewModel(CoreDispatcher dispatcher)
+        public ChatViewModel(Dispatcher dispatcher)
         {
             Dispatcher = dispatcher;
             SendMessageCommand = new DelegateCommand(async () => await SendMessage(), () => CanSend);
@@ -30,10 +35,10 @@ namespace SignalRChat
             LogMessages = new ObservableCollection<string>();
             Status = "Waiting to connect...";
 
-            var ignore = Connect();
+            Connect().Forget();
         }
 
-        public CoreDispatcher Dispatcher { get; private set; }
+        public Dispatcher Dispatcher { get; private set; }
 
         public event PropertyChangedEventHandler PropertyChanged;
 

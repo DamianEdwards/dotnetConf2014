@@ -18,6 +18,7 @@
     </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)ChatViewModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CollectionTraceWriter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)DispatcherExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DispatchingHubConnection.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DispatchingHubProxy.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Message.cs" />

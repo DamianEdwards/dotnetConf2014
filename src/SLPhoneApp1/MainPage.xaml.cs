@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Navigation;
 using Microsoft.Phone.Controls;
 using Microsoft.Phone.Shell;
+using SignalRChat;
 using SLPhoneApp1.Resources;
 
 namespace SLPhoneApp1

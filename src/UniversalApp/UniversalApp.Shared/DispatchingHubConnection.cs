@@ -1,16 +1,26 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Windows;
+#if SILVERLIGHT
+using System.Windows.Threading;
+#else
+using Dispatcher = Windows.UI.Core.CoreDispatcher;
+#endif
 using Windows.UI.Core;
 
 namespace Microsoft.AspNet.SignalR.Client
 {
+
     /// <summary>
+#if SILVERLIGHT
     /// A HubConnection that invokes callbacks via a <see cref="System.Windows.Threading.Dispatcher"/>.
+#else
+    /// A HubConnection that invokes callbacks via a <see cref="Windows.UI.Core.CoreDispatcher"/>.
+#endif
     /// </summary>
     public class DispatchingHubConnection : HubConnection
     {
-        private readonly CoreDispatcher _dispatcher;
+        private readonly Dispatcher _dispatcher;
         private Action<StateChange> _stateChanged;
         private Action _connectionSlow;
         private Action _reconnecting;
@@ -18,11 +28,15 @@ namespace Microsoft.AspNet.SignalR.Client
         private Action _closed;
         private Action<Exception> _error;
 
-        public DispatchingHubConnection(string url, CoreDispatcher dispatcher)
+        public DispatchingHubConnection(string url, Dispatcher dispatcher)
             : base(url)
         {
+            if (dispatcher == null)
+            {
+                throw new ArgumentNullException("dispatcher");
+            }
+
             _dispatcher = dispatcher;
-            //_dispatcher = dispatcher ?? Deployment.Current.Dispatcher;
             base.StateChanged += HubConnection_StateChanged;
             base.ConnectionSlow += HubConnection_ConnectionSlow;
             base.Reconnecting += HubConnection_Reconnecting;
@@ -41,7 +55,7 @@ namespace Microsoft.AspNet.SignalR.Client
         {
             if (_stateChanged != null)
             {
-                _stateChanged.Dispatch(stateChange, _dispatcher).Forget();
+                _stateChanged.Dispatch(stateChange, _dispatcher);
             }
         }
 
@@ -55,7 +69,7 @@ namespace Microsoft.AspNet.SignalR.Client
         {
             if (_connectionSlow != null)
             {
-                _connectionSlow.Dispatch(_dispatcher).Forget();
+                _connectionSlow.Dispatch(_dispatcher);
             }
         }
 
@@ -69,7 +83,7 @@ namespace Microsoft.AspNet.SignalR.Client
         {
             if (_reconnecting != null)
             {
-                _reconnecting.Dispatch(_dispatcher).Forget();
+                _reconnecting.Dispatch(_dispatcher);
             }
         }
 
@@ -83,7 +97,7 @@ namespace Microsoft.AspNet.SignalR.Client
         {
             if (_reconnected != null)
             {
-                _reconnected.Dispatch(_dispatcher).Forget();
+                _reconnected.Dispatch(_dispatcher);
             }
         }
 
@@ -97,7 +111,7 @@ namespace Microsoft.AspNet.SignalR.Client
         {
             if (_closed != null)
             {
-                _closed.Dispatch(_dispatcher).Forget();
+                _closed.Dispatch(_dispatcher);
             }
         }
 
@@ -111,7 +125,7 @@ namespace Microsoft.AspNet.SignalR.Client
         {
             if (_error != null)
             {
-                _error.Dispatch(ex, _dispatcher).Forget();
+                _error.Dispatch(ex, _dispatcher);
             }
         }
 

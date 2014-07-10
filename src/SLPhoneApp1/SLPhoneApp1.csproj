@@ -91,26 +91,40 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="ActionExtensions.cs" />
+    <Compile Include="..\UniversalApp\UniversalApp.Shared\ActionExtensions.cs">
+      <Link>ActionExtensions.cs</Link>
+    </Compile>
+    <Compile Include="..\UniversalApp\UniversalApp.Shared\ChatViewModel.cs">
+      <Link>ChatViewModel.cs</Link>
+    </Compile>
+    <Compile Include="..\UniversalApp\UniversalApp.Shared\CollectionTraceWriter.cs">
+      <Link>CollectionTraceWriter.cs</Link>
+    </Compile>
+    <Compile Include="..\UniversalApp\UniversalApp.Shared\DispatchingHubConnection.cs">
+      <Link>DispatchingHubConnection.cs</Link>
+    </Compile>
+    <Compile Include="..\UniversalApp\UniversalApp.Shared\DispatchingHubProxy.cs">
+      <Link>DispatchingHubProxy.cs</Link>
+    </Compile>
+    <Compile Include="..\UniversalApp\UniversalApp.Shared\Message.cs">
+      <Link>Message.cs</Link>
+    </Compile>
+    <Compile Include="..\UniversalApp\UniversalApp.Shared\TaskExtensions.cs">
+      <Link>TaskExtensions.cs</Link>
+    </Compile>
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
-    <Compile Include="ChatViewModel.cs" />
-    <Compile Include="CollectionTraceWriter.cs" />
-    <Compile Include="DispatchingHubConnection.cs" />
-    <Compile Include="DispatchingHubProxy.cs" />
     <Compile Include="LocalizedStrings.cs" />
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Message.cs" />
     <Compile Include="Resources\AppResources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>AppResources.resx</DependentUpon>
     </Compile>
-    <Compile Include="TaskExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">
